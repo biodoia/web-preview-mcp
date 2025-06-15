@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "web-preview": {
+      "command": "node",
+      "args": ["/home/lisergico25/progetti/web-preview-mcp/dist/server.js"],
+      "env": {
+        "PREVIEW_PORT": "8300",
+        "HEADLESS": "false"
+      }
+    }
+  }
+}
