@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Web Preview MCP Demo</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+            background: #0a0a0a;
+            color: #fff;
+        }
+        
+        h1 {
+            background: linear-gradient(45deg, #00ff88, #00aaff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+        
+        .demo-section {
+            background: #1a1a1a;
+            border: 1px solid #333;
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin: 1rem 0;
+        }
+        
+        button {
+            background: #00ff88;
+            color: #000;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            margin: 0.5rem;
+        }
+        
+        button:hover {
+            background: #00cc66;
+        }
+        
+        #output {
+            background: #000;
+            border: 1px solid #333;
+            padding: 1rem;
+            border-radius: 4px;
+            font-family: monospace;
+            margin-top: 1rem;
+            min-height: 100px;
+        }
+        
+        .status {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.875rem;
+            margin-left: 1rem;
+        }
+        
+        .status.connected {
+            background: #00ff88;
+            color: #000;
+        }
+        
+        .status.disconnected {
+            background: #ff4444;
+            color: #fff;
+        }
+    </style>
+</head>
+<body>
+    <h1>Web Preview MCP Demo</h1>
+    <span id="ws-status" class="status disconnected">WebSocket: Disconnected</span>
+    
+    <div class="demo-section">
+        <h2>Interactive Elements</h2>
+        <p>Test browser automation with these elements:</p>
+        
+        <button id="test-button" onclick="logAction('Button clicked!')">Click Me</button>
+        <button onclick="logAction('Alert shown!'); alert('Hello from Web Preview!')">Show Alert</button>
+        
+        <div style="margin-top: 1rem;">
+            <label for="test-input">Test Input:</label>
+            <input type="text" id="test-input" placeholder="Type something..." 
+                   onchange="logAction('Input changed: ' + this.value)"
+                   style="margin-left: 0.5rem; padding: 0.5rem; background: #222; color: #fff; border: 1px solid #444;">
+        </div>
+        
+        <div style="margin-top: 1rem;">
+            <label for="test-select">Test Select:</label>
+            <select id="test-select" onchange="logAction('Selected: ' + this.value)"
+                    style="margin-left: 0.5rem; padding: 0.5rem; background: #222; color: #fff; border: 1px solid #444;">
+                <option value="">Choose an option</option>
+                <option value="option1">Option 1</option>
+                <option value="option2">Option 2</option>
+                <option value="option3">Option 3</option>
+            </select>
+        </div>
+    </div>
+    
+    <div class="demo-section">
+        <h2>Console Output</h2>
+        <div id="output">Waiting for actions...</div>
+    </div>
+    
+    <div class="demo-section">
+        <h2>Debug Info</h2>
+        <p>Page loaded at: <span id="load-time"></span></p>
+        <p>User Agent: <span id="user-agent" style="font-size: 0.875rem; opacity: 0.8;"></span></p>
+    </div>
+
+    <script>
+        // WebSocket connection for live updates
+        let ws = null;
+        const wsStatus = document.getElementById('ws-status');
+        
+        function connectWebSocket() {
+            try {
+                ws = new WebSocket('ws://localhost:8300');
+                
+                ws.onopen = () => {
+                    wsStatus.textContent = 'WebSocket: Connected';
+                    wsStatus.className = 'status connected';
+                    logAction('WebSocket connected to preview server');
+                };
+                
+                ws.onclose = () => {
+                    wsStatus.textContent = 'WebSocket: Disconnected';
+                    wsStatus.className = 'status disconnected';
+                    // Reconnect after 2 seconds
+                    setTimeout(connectWebSocket, 2000);
+                };
+                
+                ws.onmessage = (event) => {
+                    logAction('WebSocket message: ' + event.data);
+                };
+                
+                ws.onerror = (error) => {
+                    console.error('WebSocket error:', error);
+                };
+            } catch (e) {
+                console.log('WebSocket not available');
+            }
+        }
+        
+        // Try to connect to WebSocket
+        connectWebSocket();
+        
+        // Log actions to the output div
+        function logAction(message) {
+            const output = document.getElementById('output');
+            const timestamp = new Date().toLocaleTimeString();
+            output.innerHTML += `<div>[${timestamp}] ${message}</div>`;
+            output.scrollTop = output.scrollHeight;
+            
+            // Also log to console for debugging
+            console.log(message);
+        }
+        
+        // Set debug info
+        document.getElementById('load-time').textContent = new Date().toLocaleString();
+        document.getElementById('user-agent').textContent = navigator.userAgent;
+        
+        // Log initial load
+        logAction('Demo page loaded successfully');
+        
+        // Expose for automated testing
+        window.webPreviewDemo = {
+            logAction,
+            getOutput: () => document.getElementById('output').textContent
+        };
+    </script>
+</body>
+</html>
